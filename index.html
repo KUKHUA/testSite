@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="fileLib.js"></script>
+  </head>
+  <body>
+    <h1>hello!</h1>
+    <script>
+      // Register Service Worker
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((registration) => {
+            console.log(
+              "Service Worker registered with scope:",
+              registration.scope
+            );
+          })
+          .catch((error) => {
+            console.error("Service Worker registration failed:", error);
+          });
+      }
+
+      // Create file in OPFS
+      async function createOpfsFile() {
+        if (!navigator.storage || !navigator.storage.getDirectory) {
+          console.error("Origin Private File System API not supported.");
+          return;
+        }
+        try {
+          const root = await navigator.storage.getDirectory();
+          // Ensure 'user' directory exists
+          const userDirHandle = await root.getDirectoryHandle("user", {
+            create: true,
+          });
+          // Get file handle, create if it doesn't exist
+          const fileHandle = await userDirHandle.getFileHandle("test.html", {
+            create: true,
+          });
+          // Create a writable stream
+          const writable = await fileHandle.createWritable();
+          // Write the content to the file
+          await writable.write("<h1>hello world!</h1>");
+          // Close the file and write the contents to disk
+          await writable.close();
+          console.log('File "user/test.html" created successfully in OPFS.');
+        } catch (error) {
+          console.error("Failed to create file in OPFS:", error);
+        }
+      }
+
+      createOpfsFile();
+    </script>
+  </body>
+</html>
